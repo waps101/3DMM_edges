@@ -15,7 +15,7 @@ X. Zhu and D. Ramanan. "Face detection, pose estimation and landmark localizatio
 
 ## Running the code
 
-
+The easiest way to run the code is to run the demo.m script. This loads the model, loads an image, runs the landmark detector and then calls the edge fitting code.
 
 ## Dependencies
 
@@ -32,7 +32,20 @@ If you wish to use a different morphable model, this should be fine but you will
   * shapeMU is a 3n by 1 vector containing the vertices of the mean shape
   * shapeEV is a k by 1 vector containing the sorted standard deviations of each principal component (note: standard deviations not variances as the BFM name would imply)
   * tl is an f by 3 matrix containing the face list for the model
-2. You need to precompute two structures that allow fast lookup of edges adjacent to vertices and faces. Two scripts are provided for doing this:
+2. You need to precompute two structures that allow fast lookup of edges adjacent to vertices and faces. You should save the two structures since they are fixed for a given triangulation. To do so, follow these two steps:
+ * First compute the edge/vertex list by doing:
+```matlab
+TR = triangulation(tl,ones(k,1),ones(k,1),ones(k,1));
+Ev = TR.edges;
+clear TR;
+```
+ * Second, use the provided script to compute the edge/face list by doing:
+```matlab
+Ef = meshFaceEdges(tl,Ev);
+```
+3. You need to provide the morphable model indices that correspond to the output of the landmark detector (see below). This is done for the Zhu and Ramanan detector and Basel model in the function ZR2BFM.m function.
+
+The code also requires a landmark detector. We provide the Zhu and Ramanan detector (see license below) but it would be easy to modify the code to use another detector. You may need to compile the mex files for your platform (we include precompiled mex files for win64 and Mac OS X).
 
 ## Third party licenses
 
