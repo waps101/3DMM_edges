@@ -34,15 +34,15 @@ If you wish to use a different morphable model, this should be fine but you will
   * tl is an f by 3 matrix containing the face list for the model
 2. You need to precompute two structures that allow fast lookup of edges adjacent to vertices and faces. You should save the two structures since they are fixed for a given triangulation. To do so, follow these two steps:
  * First compute the edge/vertex list by doing:
-```matlab
-TR = triangulation(tl,ones(k,1),ones(k,1),ones(k,1));
-Ev = TR.edges;
-clear TR;
-```
+ ```matlab
+ TR = triangulation(tl,ones(k,1),ones(k,1),ones(k,1));
+ Ev = TR.edges;
+ clear TR;
+ ```
  * Second, use the provided script to compute the edge/face list by doing:
-```matlab
-Ef = meshFaceEdges(tl,Ev);
-```
+ ```matlab
+ Ef = meshFaceEdges(tl,Ev);
+ ```
 3. You need to provide the morphable model indices that correspond to the output of the landmark detector (see below). This is done for the Zhu and Ramanan detector and Basel model in the function ZR2BFM.m function.
 
 The code also requires a landmark detector. We provide the Zhu and Ramanan detector (see license below) but it would be easy to modify the code to use another detector. You may need to compile the mex files for your platform (we include precompiled mex files for win64 and Mac OS X).
