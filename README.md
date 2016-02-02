@@ -17,9 +17,11 @@ X. Zhu and D. Ramanan. "Face detection, pose estimation and landmark localizatio
 
 The easiest way to run the code is to run the demo.m script. This loads the model, loads an image, runs the landmark detector and then calls the edge fitting code.
 
+To recreate the quantitative experiment in our paper, run the evaluation.m script. Again, you will need to set the base path to the Basel Face Model. The script first renders 9 views of each of the 10 out of sample faces. It then fits the model to each image, computes errors and stores these in a matrix.
+
 ## Dependencies
 
-In order to use this code, you need to provide your own 3D Morphable Model. One such model (and the one we used while developing the code) is the [Basel Face Model](http://faces.cs.unibas.ch/bfm/?nav=1-0&id=basel_face_model). This model is freely available upon signing a license agreement. If you use the Basel Face Model, then all you need to do is set the base path to your model in the demo file:
+In order to use this code, you need to provide your own 3D Morphable Model. One such model (and the one we used while developing the code) is the [Basel Face Model](http://faces.cs.unibas.ch/bfm/?nav=1-0&id=basel_face_model). This model is freely available upon signing a license agreement. If you use the Basel Face Model, then all you need to do is set the base path to your model in the demo.m file:
 
 ```matlab
 BFMbasedir = '...'; % Set this to your Basel Face Model base directory
