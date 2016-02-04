@@ -5,9 +5,9 @@ Please note, this is in development and we are in the process of uploading the r
 
 ## References
 
-If you use this code in your research, you should cite the following paper:
+If you use this code in your research, you should cite [the following paper](http://arxiv.org/abs/1602.01125):
 
-A. Bas, W.A.P. Smith, T. Bolkart and S. Wuhrer. "Fitting a 3D Morphable Model to Edges: A Comparison Between Hard and Soft Correspondences", to appear, 2016.
+A. Bas, W.A.P. Smith, T. Bolkart and S. Wuhrer. "Fitting a 3D Morphable Model to Edges: A Comparison Between Hard and Soft Correspondences", arXiv:1602.01125, 2016.
 
 and (for the landmark detector):
 
