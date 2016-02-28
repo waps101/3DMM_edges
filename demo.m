@@ -14,7 +14,7 @@ numsd = 0.5;
 addpath('BoundaryVertices','RamananDetector','Functions','SOP');
 
 % YOU MUST set this to the base directory of the Basel Face Model
-BFMbasedir = '/Users/williamsmith/Documents/arnaud/dbs/BaselFaceModel/';
+BFMbasedir = '';
 
 % Load morphable model
 load(strcat(BFMbasedir,'01_MorphableModel.mat'));

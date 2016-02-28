@@ -1,4 +1,4 @@
-function [b,R,t,s] = FitSingleSOP( xp,shapePC,shapeMU,shapeEV,ndims,landmarks )
+function [b,R,t,s] = FitSingleSOP( xp,shapePC,shapeMU,shapeEV,ndims,landmarks,numsd )
 %FITSINGLESOP Fit morphable model to single image landmarks
 %   Given 2D locations of landmark vertices, fit morphable model under
 %   scaled orthographic projection
@@ -21,7 +21,6 @@ if size(xp,1)>size(xp,2)
 end
 
 % Parameters
-numsd=2; % Number of standard deviations for hyperbox constraint
 niter = 5; % Number of iterations of coordinate ascent
 
 nverts = size(shapePC,1)/3;
