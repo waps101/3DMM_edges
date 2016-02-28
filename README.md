@@ -1,7 +1,7 @@
 # 3DMM_edges
 This is a Matlab implementation of an algorithm for fully automatically fitting a 3D Morphable Model to a single image using landmarks and edge features.
 
-Please note, this is in development and we are in the process of uploading the required files. Do not clone yet.
+Please note, this is in development and we are in the process of uploading the required files. The current version should run and the provided demo.m will execute the basic algorithm. Some of the additional scripts and functions related to using other morphable models are not yet in the repository.
 
 ## References
 
