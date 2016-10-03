@@ -1,4 +1,15 @@
-function im = render_face_ortho(FV, T, width, height, background)
+function im = render_face_FV(FV, T, oglp, background)
+
+% Get the rendering parameters
+width           = oglp.width;               % width of the image plane
+height          = oglp.height;              % height of the image plane
+i_amb_light     = oglp.i_amb_light;   	% ambient light intensity
+i_dir_light     = oglp.i_dir_light;    % directed light intensity
+d_dir_light     = [0; 0; 1];       % directed light direction
+shininess       = 1;           % shininess
+specularity     = 0;      % specularity
+do_cast_shadows = false;     % flag for casting shadows
+%shadow_buf_size = oglp.sbufsize;            % buffer size for casting shadows
 
 % Get the extrinsic transformation matrix
 M = T(1: 3, :); % the output does not need to be in homogeneous coordinates
@@ -172,18 +183,32 @@ clear w1_triangle_normals w2_triangle_normals w3_triangle_normals
 normals = normals ./ repmat(sqrt(sum(normals.^2, 2)), 1, 3);
 
 % Get the texture
-%texture1 = zeros(Nvertices,1);
-%texture2 = zeros(Nvertices,1);
-%texture3 = zeros(Nvertices,1);
+texture1 = zeros(Nvertices,1);
+texture2 = zeros(Nvertices,1);
+texture3 = zeros(Nvertices,1);
 
+H = [0; 0; 1] + d_dir_light;
+H = H / norm(H, 2);
+
+% Compute the dot products between the vertex normals and the directed light source
+NdotL = d_dir_light(1) * normals(:, 1) + d_dir_light(2) * normals(:, 2) + d_dir_light(3) * normals(:, 3);
 
 % Compute the dot products between the vertex normals and the directed light source
 diffuse = max(0,normals(:, 3));
 
+diffuse1 = i_dir_light(1) *  NdotL;
+diffuse2 = i_dir_light(2) *  NdotL;
+diffuse3 = i_dir_light(3) *  NdotL;
 % Render the texture
-texture1 = diffuse;
-texture2 = diffuse;
-texture3 = diffuse;
+texture1 =  diffuse1;
+texture2 =  diffuse2;
+texture3 =  diffuse3;
+
+
+% Render the texture
+% texture1 = diffuse;
+% texture2 = diffuse;
+% texture3 = diffuse;
 
 clear ambient1 diffuse1 specular1 ambient2 diffuse2 specular2 ambient3 diffuse3 specular3 v
 
@@ -211,9 +236,9 @@ im = cat(3, im1, im2, im3);
 
 clear im1 im2 im3
 
-im = flipud(fliplr(im));
-
-test = repmat(flipud(fliplr(test)),[1 1 3]);
+%im = flipud(fliplr(im));
+im = flipud(im);
+test = repmat(flipud(test),[1 1 3]);
 
 im(~test)=background(~test);
 

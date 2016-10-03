@@ -1,4 +1,4 @@
-function [b,R,t,s] = FitEdges( im,xp,landmarks,shapePC,shapeMU,shapeEV,Ef,Ev,tri,ndims,numsd )
+function [b,R,t,s] = FitEdges( im,xp,landmarks,shapePC,shapeMU,shapeEV,Ef,Ev,tri,ndims,w_prior, w_edges, w_landmarks,niter )
 %FITEDGES Perform morphable model fitting using edges
 %   This function initialises by fitting to a sparse set of landmarks, then
 %   iteratively fits to edges by finding nearest neighbour between
@@ -23,31 +23,33 @@ function [b,R,t,s] = FitEdges( im,xp,landmarks,shapePC,shapeMU,shapeEV,Ef,Ev,tri
 %   R,t,s     - Estimated rotation, translation and scale of face
 
 FV.faces = tri;
-
 % PARAMETERS
 % Number of model dimensions used for initial landmark fit
-initialndims = 5;
+%ndims = 40;
 % Number of edge fitting iterations (may want to replace with a convergence
 % test)
-niter = 10;
+%niter = 1;
 % Proportion of nearest-neighbour edge matches used at each iteration, may
 % be more sensible to threshold on distance to nearest neighbour
-percentile = 0.99;
+percentile = 1;
 
 % Perform initial landmark-only fit
-[b,R,t,s] = FitSingleSOP( xp,shapePC,shapeMU,shapeEV,initialndims,landmarks,numsd );
-FV.vertices = reshape(shapePC(:,1:initialndims)*b+shapeMU,3,53490)';
+%w_prior = 0.7;
+[b,R,t,s] = FitSingleSOP( xp,shapePC,shapeMU,shapeEV,ndims,landmarks,w_prior );
+%b=zeros(20,1);
+FV.vertices = reshape(shapePC(:,1:ndims)*b+shapeMU,3,size(shapePC,1)/3)';
 
 % Display input image
-figure; imshow(im)
+%figure; imshow(im);
 
 % Extract image edges
 edges = edge(rgb2gray(im),'canny',0.15);
+%figure; imshow(edges);
 
 % Store pixel locations of edges
 [r,c]=find(edges);
 r = size(edges,1)+1-r;
-
+%bold=b;
 for iter=1:niter
     % Compute vertices lying on occluding boundary
     [ occludingVertices ] = occludingBoundaryVertices( FV,Ef,Ev,R );
@@ -68,13 +70,14 @@ for iter=1:niter
     idx = idx(d<threshold);
     occludingVertices = occludingVertices(d<threshold);
 
-    % Refit to new edge landmarks
-    % Increase number of model dimensions now that data is denser
-    [b,R,t,s] = FitSingleSOP( [c(idx)' xp(1,:); r(idx)' xp(2,:)],shapePC,shapeMU,shapeEV,ndims,[occludingVertices; landmarks],numsd );
+    [b,R,t,s] = FitSingleSOP( [c(idx)' xp(1,:); r(idx)' xp(2,:)],shapePC,shapeMU,shapeEV,ndims,[occludingVertices; landmarks],w_edges,w_landmarks,length(landmarks));
     % Note: this is completely refitting from scratch. We could just
     % re-start the nonlinear optimisation using previous estimates as
     % initialisation but this doesn't seem to work well.
-    
+    %disp(num2str(norm(b-bold)));
+    %differb(iter)=norm(b-bold);
+    FV.vertices = reshape(shapePC(:,1:ndims)*b+shapeMU,3,size(shapePC,1)/3)';
+    %bold=b;
 end
 
 end

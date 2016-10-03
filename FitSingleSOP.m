@@ -1,4 +1,4 @@
-function [b,R,t,s] = FitSingleSOP( xp,shapePC,shapeMU,shapeEV,ndims,landmarks,numsd )
+function [b,R,t,s] = FitSingleSOP( xp,shapePC,shapeMU,shapeEV,ndims,landmarks,w1,w2,nlandmarks )
 %FITSINGLESOP Fit morphable model to single image landmarks
 %   Given 2D locations of landmark vertices, fit morphable model under
 %   scaled orthographic projection
@@ -21,7 +21,8 @@ if size(xp,1)>size(xp,2)
 end
 
 % Parameters
-niter = 5; % Number of iterations of coordinate ascent
+numsd= 3; % Number of standard deviations for hyperbox constraint
+niter = 10; % Number of iterations of coordinate ascent
 
 nverts = size(shapePC,1)/3;
 
@@ -60,7 +61,11 @@ fprintf('\n');
 % Perform non-linear bundle adjustment, simultaneously optimising shape and
 % pose parameters
 disp('Performing bundle adjustment...')
-[ b,R,t,s ] = BundleAdjustSingleSOP( xp,b,R,t,s,shapePC,shapeMU,shapeEV,numsd );
+if nargin==7
+[ b,R,t,s ] = BundleAdjustSingleSOP( xp,b,R,t,s,shapePC,shapeMU,shapeEV,numsd,w1 );
+elseif nargin==9
+[ b,R,t,s ] = BundleAdjustSingleSOP( xp,b,R,t,s,shapePC,shapeMU,shapeEV,numsd,w1,w2,nlandmarks );    
+end
 disp('Done.')
 end
 

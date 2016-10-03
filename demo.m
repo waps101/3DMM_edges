@@ -1,64 +1,116 @@
-clear FV
-
-%% ADJUSTABLE PARAMETERS
-
-% Number of model dimensions to use
-ndims = 50;
-
-% Number of standard deviations that each parameter is allowed to deviate
-% from the mean
-numsd = 0.5;
+clear all
 
 %% 
-
-addpath('BoundaryVertices','RamananDetector','Functions','SOP');
+addpath('ZhuRamananDetector','optimisations','utils','comparison');
 
 % YOU MUST set this to the base directory of the Basel Face Model
 BFMbasedir = '';
 
 % Load morphable model
 load(strcat(BFMbasedir,'01_MorphableModel.mat'));
+% Important to use double precision for use in optimisers later
+shapeEV = double(shapeEV);
+shapePC = double(shapePC);
+shapeMU = double(shapeMU);
 
-% Load edge structure to speed up finding occluding boundaries
+% We need edge-vertex and edge-face lists to speed up finding occluding boundaries
+% Either: 1. Load precomputed edge structure for Basel Face Model
+load('BFMedgestruct.mat');
+% Or: 2. Compute lists for new model:
+%TR = triangulation(tl,ones(k,1),ones(k,1),ones(k,1));
+%Ev = TR.edges;
+%clear TR;
+%Ef = meshFaceEdges( tl,Ev );
+%save('edgestruct.mat','Ev','Ef');
 
-load('BFMedgestruct.mat')
+%% ADJUSTABLE PARAMETERS
 
-%% Setup basic parameters:
+% Number of model dimensions to use
+ndims = 40;
+% Prior weight for initial landmark fitting
+w_initialprior=0.7;
+% Number of iterations for iterative closest edge fitting
+icefniter=7;
 
-landmarks=[8333,7301,6011,9365,10655,8320,8311,8286,8275,5959,4675,3642,4922,3631,2088,27391,39839,40091,40351,6713,10603,11641,12673,11244,12661,14472,27778,41804,41578,41310,9806,8345,7442,6936,5392,7335,7851,8354,9248,9398,11326,9399,9129,9406,9128,8890,8367,7858,7580,7471,8374,23002,32033]';
+options.Ef = Ef;
+options.Ev = Ev;
+% w1 = weight for edges
+% w2 = weight for landmarks
+% w3 = 1-w1-w2 = prior weight
+options.w1 = 0.45; 
+options.w2 = 0.15;
+
+%% Setup basic parameters
+
+testdir='testImages/';
+im = imread(strcat(testdir,'image_0018.png'));
+edgeim = edge(rgb2gray(im),'canny',0.15);
+
+ZRtimestart = tic;
+bs = LandmarkDetector(im);
+ZRtime = toc(ZRtimestart);
+disp(['Time for landmark detection: ' num2str(ZRtime) ' seconds']);
+[x_landmarks,landmarks]=ZR2BFM( bs,im );
+ 
+
+%% Initialise using only landmarks
+
+disp('Fitting to landmarks only...');
+[b,R,t,s] = FitSingleSOP( x_landmarks,shapePC,shapeMU,shapeEV,ndims,landmarks,w_initialprior );
+FV.vertices=reshape(shapePC(:,1:ndims)*b+shapeMU,3,size(shapePC,1)/3)';
 FV.faces = tl;
 
-%% Landmark Detection
+%% Initialise using iterative closest edge fitting (ICEF)
 
-im = imread('pie.png');
-xp= RamananDetector(im);
+disp('Fitting to edges with iterative closest edge fitting...');
+[b,R,t,s] = FitEdges(im,x_landmarks,landmarks,shapePC,shapeMU,shapeEV,options.Ef,options.Ev,tl,ndims, w_initialprior, options.w1, options.w2,icefniter);
+FV.vertices = reshape(shapePC(:,1:ndims)*b+shapeMU,3,size(shapePC,1)/3)';
 
-%% Fit model
+%% Run final optimisation of hard edge cost
 
-[b,R_est,t_est,s_est] = FitEdges( im,xp,landmarks,shapePC,shapeMU,shapeEV,Ef,Ev,tl,ndims,numsd );
+disp('Optimising non-convex edge cost...');
+maxiter = 5;
+iter = 0;
+diff = 1;
+eps = 1e-9;
 
-%% Display fitted model
+[r,c]=find(edgeim);
+r = size(edgeim,1)+1-r;
 
-FV.vertices = reshape(shapePC(:,1:ndims)*b+shapeMU,3,53490)';
-figure; patch(FV, 'FaceColor', [1 1 1],'EdgeColor', 'none', 'FaceLighting', 'phong'); axis equal; axis off;
-light('Position',[0 0 1],'Style','infinite');
-patch(FV, 'FaceColor', [1 1 1], 'EdgeColor', 'none', 'FaceLighting', 'phong','AmbientStrength',0,'DiffuseStrength',1,'SpecularStrength',0,'BackFaceLighting','lit');
+while (iter<maxiter) && (diff>eps)
+    
+    FV.vertices=reshape(shapePC(:,1:ndims)*b+shapeMU,3,size(shapePC,1)/3)';
+    [ options.occludingVertices ] = occludingBoundaryVertices( FV,options.Ef,options.Ev,R );
 
- %% Texture sampling
-im = double(im)./255;
-pts=FV.vertices';
-rotpts=R_est*pts;
-pts2D = [s_est.*(rotpts(1,:)+t_est(1)); s_est.*(rotpts(2,:)+t_est(2))];
+    X = reshape(shapePC(:,1:ndims)*b+shapeMU,3,size(shapePC(:,1:ndims),1)/3);   
+    % Compute position of projected occluding boundary vertices
+    x_edge = R*X(:,options.occludingVertices);
+    x_edge = x_edge(1:2,:);
+    x_edge(1,:)=s.*(x_edge(1,:)+t(1));
+    x_edge(2,:)=s.*(x_edge(2,:)+t(2));
+    % Find edge correspondences
+    [idx,d] = knnsearch([c r],x_edge');
+    % Filter edge matches - ignore the worse 5% 
+    sortedd=sort(d);
+    threshold = sortedd(round(0.95*length(sortedd)));
+    idx = idx(d<threshold);
+    options.occludingVertices = options.occludingVertices(d<threshold);
 
-[rows,cols]=meshgrid(1:size(im,2),1:size(im,1));
-
-for col=1:3
-    FV.facevertexcdata(:,col) = interp2(rows,cols,im(:,:,col),pts2D(1,:),size(im,1)+1-pts2D(2,:));
+    b0 = b;
+    [ R,t,s,b ] = optimiseHardEdgeCost( b0,x_landmarks,shapeEV,shapeMU,shapePC,R,t,s,r,c,landmarks,options,tl,false );
+    
+    diff = norm(b0-b);
+    disp(num2str(diff));
+    iter = iter+1;
+    
 end
-nonVisibleVertices= setdiff(1:53490, visiblevertices(FV, R_est));
 
-for col=1:3
-    FV2.facevertexcdata(nonVisibleVertices,col) = NaN;
-end
+% Run optimisation for a final time but without limit on number of
+% iterations
+[ R,t,s,b ] = optimiseHardEdgeCost( b,x_landmarks,shapeEV,shapeMU,shapePC,R,t,s,r,c,landmarks,options,tl,true );
 
-figure; patch(FV, 'FaceColor', 'interp','EdgeColor', 'none', 'FaceLighting', 'phong'); axis equal; axis off;
+disp('Rendering final results...');
+FV.vertices=reshape(shapePC(:,1:ndims)*b+shapeMU,3,size(shapePC,1)/3)';
+figure; subplot(1,3,1); patch(FV, 'FaceColor', [1 1 1], 'EdgeColor', 'none', 'FaceLighting', 'phong'); light; axis equal; axis off;
+subplot(1,3,2); imshow(renderFace(FV,im,R,t,s,false));
+subplot(1,3,3); imshow(renderFace(FV,im,R,t,s,true));
