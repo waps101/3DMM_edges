@@ -5,9 +5,9 @@ Please note, this is in development and we are in the process of uploading the r
 
 ## References
 
-If you use this code in your research, you should cite [the following paper](http://arxiv.org/abs/1602.01125):
+If you use this code in your research, you should cite [the following paper](http://arxiv.org/abs/1602.01125) ([DOI](http://dx.doi.org/10.1007/978-3-319-54427-4_28)):
 
-[DOI](http://dx.doi.org/10.1007/978-3-319-54427-4_28) A. Bas, W.A.P. Smith, T. Bolkart and S. Wuhrer. "Fitting a 3D Morphable Model to Edges: A Comparison Between Hard and Soft Correspondences". In Proc. ACCV Workshop on Facial Informatics, LNCS vol. 10117, pp. 377-391, 2016.
+A. Bas, W.A.P. Smith, T. Bolkart and S. Wuhrer. "Fitting a 3D Morphable Model to Edges: A Comparison Between Hard and Soft Correspondences". In Proc. ACCV Workshop on Facial Informatics, LNCS vol. 10117, pp. 377-391, 2016.
 
 and (for the landmark detector):
 
